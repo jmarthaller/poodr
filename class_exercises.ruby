@@ -37,6 +37,15 @@ class Wheel
     end
 end
 
+class Trip
+end
+
+class Person
+end
+
+class Mechanic
+end
+
 @wheel = Wheel.new(26, 1.5)
 puts @wheel.circumference
 new_gear_sample = Gear.new({:chainring => 52, :cog =>  11, :wheel =>  @wheel})
