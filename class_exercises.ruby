@@ -1,3 +1,5 @@
+# Law of Demeter heuristic: "only talk to immediate neighbors" or "only use one dot"
+
 class Gear
     attr_reader :chainring, :cog, :wheel
 
@@ -37,17 +39,64 @@ class Wheel
     end
 end
 
-class Trip
-end
+# duck typing: each class should know how to prepare for the bicycle trip
 
-class Person
+# pre duck typing
+class Trip
+    attr_reader :bicycles, :customers, :vehicle
+
+    def prepare(mechanic)
+        mechanic.prepare_bicycles(bicycles)
+    end
 end
 
 class Mechanic
+    def prepare_bicycles(bicycles)
+        bicycles.each { |bicycle| prepare_bicycles(bicycle) }
+    end
+
+    def prepare_bicycle(bicycle)
+        # do something to bycicle 
+    end
 end
 
-@wheel = Wheel.new(26, 1.5)
-puts @wheel.circumference
-new_gear_sample = Gear.new({:chainring => 52, :cog =>  11, :wheel =>  @wheel})
-puts new_gear_sample.gear_inches
-puts new_gear_sample.ratio
+# same classes, but post duck typing
+# each class has a subsequent prepare_trip method
+class Trip
+    attr_reader :bicycles, :customers, :vehicle
+
+    def prepare(preparers)
+        preparers.each { |preparer| prep.prepare_trip(self) }
+    end
+end
+
+class Mechanic
+    def prepare_trip(trip)
+        trip.bicycles.each { |bicycle| prepare_bicycle(bicycle) }
+    end
+
+    def prepare_bicycle(bicycle)
+        # do something to bicycle 
+    end
+end
+
+class TripFinder
+    def prepare_trip(trip)
+        buy_food(trip.customers)
+    end
+end
+
+class Driver
+    def prepare_trip(trip)
+        vehicle = trip.vehicle
+        gas_up(vehicle)
+        fill_water_tank(vehicle)
+    end
+end
+
+
+
+
+
+
+
