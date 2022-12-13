@@ -95,14 +95,152 @@
 # end
 
 # chapter 6
+# class Bicycle
+#     attr_reader :size, :chain, :tire_size
+
+#     def initialize(args)
+#         @size = args[:size]
+#         @chain = args[:chain] || default_chain
+#         @tire_size = args[:tire_size] || default_tire_size
+#         post_initialize(args)
+#     end
+
+#     def post_initialize(args)
+#         nil
+#     end
+
+#     def spares 
+#         {
+#             tire_size: tire_size,
+#             chain: chain
+#         }.merge(local_spares)
+#     end
+
+#     def local_spares
+#         {}
+#     end
+
+#     def default_chain
+#         '10-speed'
+#     end
+
+#     def default_tire_size
+#         raise NotImplementedError
+#     end
+# end
+
+# class RoadBike < Bicycle
+#     attr_reader :tape_color
+
+#     def initialize(args)
+#         @tape_color = args[:tape_color]
+#     end
+
+#     def local_spares
+#         {tape_color: tape_color}
+#     end
+
+#     def default_tire_size
+#         '23'
+#     end
+# end
+
+
+# class MountainBike < Bicycle
+#     attr_reader :front_shock, :rear_shock
+
+#     def initialize(args)
+#         @front_shock = args[:front_shock]
+#         @rear_shock = args[:rear_shock]
+#     end
+
+#     def local_spares
+#         {rear_shock: rear_shock}
+#     end
+
+#     def default_tire_size
+#         '2.1'
+#     end
+# end
+
+# class RecumbantBike < Bicycle
+#     attr_reader :flag
+
+#     def post_initialize(args)
+#         @flag = args[:flag]
+#     end
+
+#     def local_spares
+#         {flag: flag}
+#     end
+
+#     def default_chain
+#         "9-speed"
+#     end
+    
+#     def default_tire_size
+#         '28'
+#     end
+# end
+
+# laydown_bike = RecumbantBike.new(flag: "american")
+# puts laydown_bike.spares
+
+
+# chapter 7
+
+
+class Schedule
+    def scheduled?(schedulable, start_date, end_date)
+        puts "This #{schedulable.class} " + 
+        "is not schedulable\n" + 
+        " between #{start_date} and #{end_date}."
+        false
+    end
+end
+
+module Schedulable
+    def schedule 
+        @schedule ||= ::Schedule.new
+    end
+
+    def schedulable?(start_date, end_date)
+        !scheduled?(start_date - lead_days, end_date)
+    end
+
+    def scheduled?(start_date, end_date)
+        schedule.scheduled?(self, start_date, end_date)
+    end
+
+    def lead_days
+        1
+    end
+end
+
+
 class Bicycle
-    attr_reader :size, :chain, :tire_size
+    attr_reader :schedule, :size, :chain, :tire_size
 
     def initialize(args)
+        @schedule = args[:schedule] || Schedule.new
         @size = args[:size]
         @chain = args[:chain] || default_chain
         @tire_size = args[:tire_size] || default_tire_size
         post_initialize(args)
+    end
+
+    include Schedulable
+
+    # def schedulable?(start_date, end_date)
+    #     !scheduled?(start_date - lead_days, end_date)
+    # end
+
+    # def scheduled?(start_date, end_date)
+    #     schedule.scheduled?(self, start_date, end_date)
+    # end
+
+    def lead_days
+        1
     end
 
     def post_initialize(args)
@@ -129,59 +267,31 @@ class Bicycle
     end
 end
 
-class RoadBike < Bicycle
-    attr_reader :tape_color
 
-    def initialize(args)
-        @tape_color = args[:tape_color]
-    end
-
-    def local_spares
-        {tape_color: tape_color}
-    end
-
-    def default_tire_size
-        '23'
-    end
-end
-
-
-class MountainBike < Bicycle
-    attr_reader :front_shock, :rear_shock
-
-    def initialize(args)
-        @front_shock = args[:front_shock]
-        @rear_shock = args[:rear_shock]
-    end
-
-    def local_spares
-        {rear_shock: rear_shock}
-    end
-
-    def default_tire_size
-        '2.1'
-    end
-end
-
-class RecumbantBike < Bicycle
-    attr_reader :flag
-
-    def post_initialize(args)
-        @flag = args[:flag]
-    end
-
-    def local_spares
-        {flag: flag}
-    end
-
-    def default_chain
-        "9-speed"
-    end
+class Vehicle
+    include Schedulable
     
-    def default_tire_size
-        '28'
+    def lead_days
+        3
     end
 end
 
-laydown_bike = RecumbantBike.new(flag: "american")
-puts laydown_bike.spares
+class Mechanic
+    include Schedulable
+
+    def lead_days
+        4
+    end
+end
+
+require 'date'
+starting = Date.parse("2015/09/04")
+ending = Date.parse("2015/09/10")
+b = Bicycle.new({size: 'M', tire_size: 'L'})
+b.schedulable?(starting, ending)
+
+v = Vehicle.new
+v.schedulable?(starting, ending)
+
+m = Mechanic.new
+m.schedulable?(starting, ending)
