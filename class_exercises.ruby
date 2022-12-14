@@ -190,108 +190,156 @@
 # chapter 7
 
 
-class Schedule
-    def scheduled?(schedulable, start_date, end_date)
-        puts "This #{schedulable.class} " + 
-        "is not schedulable\n" + 
-        " between #{start_date} and #{end_date}."
-        false
-    end
-end
+# class Schedule
+#     def scheduled?(schedulable, start_date, end_date)
+#         puts "This #{schedulable.class} " + 
+#         "is not schedulable\n" + 
+#         " between #{start_date} and #{end_date}."
+#         false
+#     end
+# end
 
-module Schedulable
-    def schedule 
-        @schedule ||= ::Schedule.new
-    end
+# module Schedulable
+#     def schedule 
+#         @schedule ||= ::Schedule.new
+#     end
 
-    def schedulable?(start_date, end_date)
-        !scheduled?(start_date - lead_days, end_date)
-    end
+#     def schedulable?(start_date, end_date)
+#         !scheduled?(start_date - lead_days, end_date)
+#     end
 
-    def scheduled?(start_date, end_date)
-        schedule.scheduled?(self, start_date, end_date)
-    end
+#     def scheduled?(start_date, end_date)
+#         schedule.scheduled?(self, start_date, end_date)
+#     end
 
-    def lead_days
-        1
-    end
-end
+#     def lead_days
+#         1
+#     end
+# end
 
 
+# class Bicycle
+#     attr_reader :schedule, :size, :chain, :tire_size
+
+#     def initialize(args)
+#         @schedule = args[:schedule] || Schedule.new
+#         @size = args[:size]
+#         @chain = args[:chain] || default_chain
+#         @tire_size = args[:tire_size] || default_tire_size
+#         post_initialize(args)
+#     end
+
+#     include Schedulable
+
+#     # def schedulable?(start_date, end_date)
+#     #     !scheduled?(start_date - lead_days, end_date)
+#     # end
+
+#     # def scheduled?(start_date, end_date)
+#     #     schedule.scheduled?(self, start_date, end_date)
+#     # end
+
+#     def lead_days
+#         1
+#     end
+
+#     def post_initialize(args)
+#         nil
+#     end
+
+#     def spares 
+#         {
+#             tire_size: tire_size,
+#             chain: chain
+#         }.merge(local_spares)
+#     end
+
+#     def local_spares
+#         {}
+#     end
+
+#     def default_chain
+#         '10-speed'
+#     end
+
+#     def default_tire_size
+#         raise NotImplementedError
+#     end
+# end
+
+
+# class Vehicle
+#     include Schedulable
+    
+#     def lead_days
+#         3
+#     end
+# end
+
+# class Mechanic
+#     include Schedulable
+
+#     def lead_days
+#         4
+#     end
+# end
+
+# require 'date'
+# starting = Date.parse("2015/09/04")
+# ending = Date.parse("2015/09/10")
+# b = Bicycle.new({size: 'M', tire_size: 'L'})
+# b.schedulable?(starting, ending)
+
+# v = Vehicle.new
+# v.schedulable?(starting, ending)
+
+# m = Mechanic.new
+# m.schedulable?(starting, ending)
+
+# chapter 8
 class Bicycle
-    attr_reader :schedule, :size, :chain, :tire_size
+    attr_reader :size, :parts
 
-    def initialize(args)
-        @schedule = args[:schedule] || Schedule.new
+    def initialize(args={})
         @size = args[:size]
-        @chain = args[:chain] || default_chain
-        @tire_size = args[:tire_size] || default_tire_size
-        post_initialize(args)
-    end
-
-    include Schedulable
-
-    # def schedulable?(start_date, end_date)
-    #     !scheduled?(start_date - lead_days, end_date)
-    # end
-
-    # def scheduled?(start_date, end_date)
-    #     schedule.scheduled?(self, start_date, end_date)
-    # end
-
-    def lead_days
-        1
-    end
-
-    def post_initialize(args)
-        nil
+        @parts = args[:parts]
     end
 
     def spares 
-        {
-            tire_size: tire_size,
-            chain: chain
-        }.merge(local_spares)
-    end
-
-    def local_spares
-        {}
-    end
-
-    def default_chain
-        '10-speed'
-    end
-
-    def default_tire_size
-        raise NotImplementedError
+        parts.spares
     end
 end
 
+require 'forwardable'
+class Parts
+    extend Forwardable
+    def_delegators :@parts, :size, :each
+    include Enumerable
 
-class Vehicle
-    include Schedulable
-    
-    def lead_days
-        3
+    def initialize(parts)
+        @parts = parts
+    end
+
+    def spares
+        select { |part| part.needs_spare }
     end
 end
 
-class Mechanic
-    include Schedulable
+require 'ostruct'
+module PartsFactory
+    def self.build(config, parts_class = Parts)
+        parts_class.new(config.collect { |part_config| 
+            create_part(part_config) })
+    end
 
-    def lead_days
-        4
+    def self.create_part(part_config)
+        OpenStruct.new(name: part_config[0], description: part_config[1], needs_spare: part_config.fetch(2, true))
     end
 end
 
-require 'date'
-starting = Date.parse("2015/09/04")
-ending = Date.parse("2015/09/10")
-b = Bicycle.new({size: 'M', tire_size: 'L'})
-b.schedulable?(starting, ending)
-
-v = Vehicle.new
-v.schedulable?(starting, ending)
-
-m = Mechanic.new
-m.schedulable?(starting, ending)
+road_config = [['chain', '10-speed'], ['tire_size', '23'], ['tape_color', 'red']]
+mountain_config = [['chain', '10-speed'], ['tire_size', '2.1'], ['front_shock', 'Manitou', false], ['rear_shock', 'Fox']]
+recumbent_config = [['chain', '11-speed'], ['tire_size', '22'], ['tape_color', 'blue']]
+road_bike = Bicycle.new(size: "S", parts: PartsFactory.build(road_config))
+mountain_bike = Bicycle.new(size: "L", parts: PartsFactory.build(mountain_config))
+recumbant_bike = Bicycle.new(size: "M", parts: PartsFactory.build(recumbent_config))
